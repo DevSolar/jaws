@@ -1,0 +1,624 @@
+% If you are new to LaTeX, you might want to visit:
+% https://en.wikibooks.org/wiki/LaTeX for a good, easy overview
+% https://tex.stackexchange.com for all your questions
+% http://ctan.org for extension packages covering literally ALL your needs
+
+% Information for the title page.
+\newcommand{\doctitle}{JAWS Technical Guide}
+\newcommand{\docauthors}{Martin Baute}
+
+% This includes the file ./docs/_Preamble.tex, which contains configuration
+% (usually shared between the various documents).
+\input{docs/_Preamble}
+
+\section{Introduction}
+
+\subsection{What is JAWS?}
+
+JAWS is \textbf{J}ust \textbf{A} \textbf{W}orking \textbf{S}etup. It is a collection of all the things you would not want to bother with when starting a new C/C++ project, but would sure like to have as a starting point. JAWS does not claim to be \emph{the} answer, or even \emph{an} answer, but it is a good head start \emph{toward} an answer.
+
+\subsection{Licensing}
+
+With the execption of the file \lstinline{cmake/UseLATEX.cmake}, \textbf{JAWS} is original work by me, Martin Baute \lstinline{<solar@rootdirectory.de>}, and provided under Creative Commons CC0 (Public Domain Dedication)\footnote{\url{https://creativecommons.org/publicdomain/zero/1.0/deed.de}}.
+
+\lstinline{cmake/UseLATEX.cmake} is independent work by Kenneth Moreland. It bears the following copyright statement:
+
+\begin{lstlisting}[basicstyle=\ttfamily\scriptsize]
+# Author: Kenneth Moreland <kmorel@sandia.gov>
+#
+# Copyright 2004 Sandia Corporation.
+# Under the terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the
+# U.S. Government. Redistribution and use in source and binary forms, with
+# or without modification, are permitted provided that this Notice and any
+# statement of authorship are reproduced on all copies.
+\end{lstlisting}
+
+I did only very minor modifications to it, and you should be able to use any newer version of it\footnote{\url{http://public.kitware.com/Wiki/CMakeUserUseLATEX}} as a drop-in replacement.
+
+\subsection{But what \emph{is} JAWS?}
+
+Essentially, JAWS is a set of configuration files. There is \lstinline{docs/Doxyfile.in} for use with Doxygen\footnote{\url{http://www.stack.nl/~dimitri/doxygen/}}, and \lstinline{docs/_Preamble.tex} for use with \LaTeX{} documents. The real core of JAWS, though, are the various CMake\footnote{\url{http://www.cmake.org}}-related files.
+
+\section{Introduction to CMake}
+
+CMake is a cross-platform meta-buildsystem. It generates build files for the environment you selected -- Unix Makefiles, Microsoft Visual Studio solutions (of any version you like), or a number other supported formats.
+
+(Run \lstinline{cmake --help} to get a list of generators available from your CMake installation.)
+
+CMake is a very versatile system, and can do a great many things automatically. But you need to find out about them, study the documentation, and then implement and test the configuration. I did this in JAWS so you do not have to. Virtually all other features provided by JAWS closely tie into this CMake configuration.
+
+All the various configuration and source files are commented, and should be self-explanatory. (If they are not, feel free to file a bug report, and I will add what is missing.) This document will present the inner workings of JAWS (and, by implication, CMake and its companion tools) from a higher level of abstraction, so that you know what is going on in general and where to look to find out the specifics.
+
+\subsection{Configuring}
+
+Building software with CMake is a three-step process. The first is \emph{configuring}.
+
+Executing the commands in the \lstinline{CMakeLists.txt} file, at the top source directory level of JAWS (or any other CMake-based project), CMake finds any referenced dependencies (libraries, header files, command line tools etc.), and stores its findings in a file \lstinline{CMakeCache.txt}.
+
+The idea here is to do this from a new, empty directory (the ``binary directory'' in CMake terminology), referencing the source directory in a different location. CMake is very careful not to write anything into the source tree; make use of this feature.
+
+Try it. Assuming you have a shell with the JAWS source tree root as working directory:
+
+\begin{lstlisting}
+mkdir build
+cd build
+cmake ..
+\end{lstlisting}
+
+You will see various output. Lines starting with ``\lstinline{--}'' are informational, lines starting with ``\lstinline{++}'' are warnings. Lines starting with neither of those are errors. Somewhere close to the end you should see this:
+
+\begin{lstlisting}
+-- Configuring done
+\end{lstlisting}
+
+\subsection{Generating}
+
+CMake is a \emph{meta}-buildsystem. It does not build the software itself, it builds \emph{build files}, embedding the information gathered during the previous \emph{configuration} step. This is called \emph{generating}; the way we have been calling CMake, this step is actually done right after the configuration:
+
+\begin{lstlisting}
+-- Generating done.
+-- Build files have been written to: <path to binary dir>
+\end{lstlisting}
+
+\subsection{Building}
+
+Now you can use the generated build files to actually build the software. This could be a \lstinline{make all}, or \lstinline{devenv /build release MyProject.sln}, or whatever is appropriate for your environment of choice.
+
+CMake adds dependency rules that will re-run configuration and generation as needed (e.g. if the contents of \lstinline{CMakeLists.txt} have changed). So, if you want to e.g. add a new source file to the build, do so in \lstinline{CMakeLists.txt}, \emph{not} your IDE or the generated build files.
+
+\section{Getting Started}
+
+The files provided by JAWS use the string ``MyProject'' (or ``MYPROJECT'') as a placeholder for file or variable names, for header include guards etc.; obviously, you would want to replace this with the name of your own project.
+
+Instead of making you go through all the files individually to search and replace the placeholder, there is \lstinline{JAWSInit.cmake}. You can execute this script as:
+
+\begin{lstlisting}
+cmake -P JAWSInit.cmake <projectname>
+\end{lstlisting}
+
+Use your chosen project name (which should be all lowercase and not contain spaces) instead of \lstinline{<projectname>}, and the script will do the replacing for you (turning the name to all uppercase for preprocessor symbols and constants). After it is run, the script deletes itself, leaving you with a ready-to-go source tree.
+
+You should open \lstinline{CMakeLists.txt} in an editor and edit the \lstinline{JAWS_PROJECT_*} strings at the top of the file (under the heading ``Project Info''). Among other things, CPack uses these strings to fill in the metadata when you create a distributable package.
+
+\section{Configuration Files}
+
+Now we know \emph{what} CMake does; let us have a look at \emph{how} it does that. More specifically, which file in the source tree has which purpose.
+
+\subsection{\texttt{CMakeLists.txt}}
+
+This is CMake's main configuration file. It contains a list of the source files to be compiled, plus all the information necessary what to do with them, written in CMake's own script-like syntax. For larger projects, this can be quite a lot of information, and CMake gives only little guidance on how to set it up. One of the central features of JAWS is providing ready-made scaffolding you only have to flesh out.
+
+With JAWS, \lstinline{CMakeLists.txt} only \lstinline{set()}s various variables: The name and short description of your project, which libraries and executables it consists of, which source files to compile for each unit, and some metadata like your support mail address. It then \emph{includes} another file (\lstinline{cmake/JAWS.cmake}) that turns those settings into CMake directives. This way, the things you tend to edit more often during development (the lists of source files) are seperated from the actual configuration logic, which should not require editing that often.
+
+\subsection{\texttt{cmake/*} -- Additional Modules}
+
+The following command in \lstinline{CMakeLists.txt} adds the \lstinline{cmake/} subdirectory of the source tree to CMake's module path:
+
+\begin{lstlisting}
+set( CMAKE_MODULE_PATH $(CMAKE_SOURCE_DIR}/cmake )
+\end{lstlisting}
+
+The module path is searched for modules and include files, and the above command effectively adds any file in the \lstinline{cmake/} subdirectory to whatever the CMake distribution offers.
+
+\subsubsection{\texttt{JAWS.cmake}}
+
+The include file mentioned above. Here, the various lists from \lstinline{CMakeLists.txt} are processed, third-party libraries and tools located, and everything set up for generation. Nothing in here is ``black magic'', but some things in here took some work searching the documentation, Wiki and StackOverflow entries, and some good old Trial \& Error. Some of them still do; JAWS is very much a work in progress.
+
+\subsubsection{\texttt{FindICU.cmake}}
+
+CMake uses ``Find Modules'' to locate third-party libraries. A lot of them come pre-packaged with your CMake installation, but it is easy to expand that collection; the ICU libraries (``International Components for Unicode'') are a frequently used C++ library for which CMake does \emph{not} provide a module. JAWS makes up for this.
+
+Another purpose of this file is to showcase how easy JAWS makes it to write a custom ``Find Module'', if you need one. Open \lstinline{FindICU.cmake} in a text editor; you will find it a rather self-explanatory template. The ``plumbing'' is hidden in the file described next.
+
+\subsubsection{\texttt{FindPackageComponents.cmake}}
+
+This file contains the helper functions that make JAWS ``Find Modules'' so easy to write. The downside is that this file is by far not as simple as the modules it enables.
+
+Its features are described in detail by comments in the file itself.
+
+\subsubsection{\texttt{CheckAIXEnvironment.cmake}}
+
+JAWS was not developed for the raw fun of it. I had a specific purpose when I started looking into cross-platform build systems, and that included building on the AIX platform using the IBM Visual Age compiler. This compiler has some peculiarities; one of them is that certain environment variables control the output format.
+
+This file provides a macro of the same name (\lstinline{CheckAIXEnvironment}) that does sanity checks on the environment, so problems are reported with an intelligible error message in the configuration stage instead of linker errors during the build stage.
+
+\subsubsection{\texttt{MinGW_i686.cmake}}
+
+This file, and its companion \lstinline{MinGW_x86_64.cmake}, showcase CMake's ability to support MinGW builds. By setting \lstinline{-DCMAKE_TOOLCHAIN_FILE=...} (with the elipsis replaced with the appropriate \lstinline{MinGW_\*.cmake} file), CMake can build your project using MinGW, creating Windows executables on non-Windows platforms.
+
+This is currently only a showcase, not integrated into the main JAWS functionality. For a very well-done MinGW support framework, check out MXE\footnote{\url{http://mxe.cc}}.
+
+\subsubsection{\texttt{UseLATEX.cmake}}
+
+This file is independent work by Kenneth Moreland and copyright 2004 Sandia Corporation, used under license. In cooperation with \lstinline{FindLATEX.cmake} (included in the CMake distribution), it provides the necessary logic to conveniently build \LaTeX{} documentation. I applied a couple of minor changes to the file, but you should be able to use any newer version\footnote{\url{http://public.kitware.com/Wiki/CMakeUserUseLATEX}} as a drop-in replacement.
+
+\subsection{\texttt{CTestScript.cmake}}
+
+CTest is part of the CMake distribution, and can be used in various ways. One of them is to execute a build under control of a CTest script. \lstinline{CTestScript.cmake} is such a CTest script, which can be used in two different ways.
+
+\subsubsection{Script-Driven Build}
+
+In the source directory, enter the following command to do a ``clean'' (full) build of the software:
+
+\begin{lstlisting}
+ctest -S CTestScript.cmake,<Configuration>
+\end{lstlisting}
+
+\lstinline{<Configuration>} can be any of the supported build types. CMake supports \lstinline{Debug}, \lstinline{Release}, \lstinline{RelWithDebInfo} (release optimization with debug information), and \lstinline{MinSizeRel} (size optimization).
+
+JAWS adds the configurations \lstinline{Trace} (release build, defining the \lstinline{TRACE_INFO} preprocessor symbol), and \lstinline{DebugTrace} (same as before but for a debug build).
+
+The directory \lstinline{../build/<Projectname>-<Configuration>} is created (or emptied if it already exists), and used as binary directory.
+
+This is a conveniance feature, so you can get a "binary" working directory where you can run debugger sessions, manual testing etc. without having to figure out the correct CMake command line. Actually, with this feature it is unlikely that you will ever have to use the \lstinline{cmake} command at all.
+
+For debugging purposes, the script \emph{prints} the CMake command line it uses for configuration.
+
+\subsubsection{Build \& Test}
+
+Instead of specifying the build type (as described in the last section), you can specify \lstinline{Experimental}, \lstinline{Continuous}, or \lstinline{Nightly}.
+
+Each of those will result in a \lstinline{Release} build, followed by running all configured tests (see \secref{Testing}), and (if configured) submitting the results to the CDash server (see \secref{CDash}). The difference is in \emph{what} will be build:
+
+\begin{description}
+\item[Experimental] will build and test the sources in the source directory as-is;
+\item[Continuous] will attempt to update the source directory, and build / test only if updates are found;
+\item[Nightly] will update the source directory to \lstinline{CTEST_NIGHTLY_START_TIME}, a timestamp configured in \lstinline{CTestConfig.cmake} (see below), then do a build / test run (whether files have changed or not). The tests also include \lstinline{valgrind} dynamic memory checks, if a \lstinline{valgrind} executable was found during configuration.
+\end{description}
+
+Each of those will be build in the \lstinline{Release} build type. As described in the last section, a new directory \lstinline{../build/<Projectname>-<Configuration>} is created (or emptied if it already exists), and used as binary directory.
+
+While \lstinline{Experimental} is intended for interactive use, \lstinline{Continuous} and \lstinline{Nightly} are intended for scheduled jobs. You should have individual source directories set apart for those last two, ideally on a build server.
+
+Running either \lstinline{Continuous} or \lstinline{Nightly} builds on a source directory that is \emph{also} used interactively can give undesired results.
+
+\subsubsection{Other Uses}
+
+I cannot give a complete overview of CTest functionality here; refer to its documentation. But two features should be mentioned:
+
+\begin{description}
+\item[\texttt{ctest -N}] gives a list of available tests, and
+\item[\texttt{ctest -I <from>,<to>}] runs the indicated range of tests.
+\end{description}
+
+\subsubsection{Configuration}
+
+The default setup assumes that Unix builds go to \lstinline{/opt}, and Windows builds to \lstinline{C:\\Program Files} (where the "icu" and "boost" installations are expected to reside as well). Adjust this if necessary.
+
+\lstinline{CTEST_CONFIGURE_COMMAND} is the line that CTest executes to build the project. As your project evolves, you may want to make adjustments here.
+
+\subsection{\texttt{CTestConfig.cmake}}
+
+This file sets CTest variables necessary for both \lstinline{CTestScript.cmake} and for CTest's ability to send test results to a CDash dashboard server (see \secref{CDash}).
+
+You will want to adjust the variables \lstinline{CTEST_DROP_SITE} and \lstinline{CTEST_DROP_LOCATION} to your project's requirements.
+
+If your build process generates compiler warnings -- which it should not, but sometimes you cannot help it -- you can add the text of the warning to \lstinline{CTEST_CUSTOM_WARNING_EXCEPTION}. This way, the warning will still be generated, but the CDash server will not \emph{report} it as an issue.
+
+%\item Showcasing of how CMake configuration entities (e.g. version numbers) can be forwarded into source files (single point of configuration).
+%\item Doxygen integration (source-based documentation).
+%\item Boost.Test and CTest integration.
+%\item Showcasing integration of International Components for Unicode (ICU) and wxWidgets (cross-platform C++ GUI toolkit).
+%\item Showcasing platform-dependend location for both the application itself and its configuration files.
+%\item Showcasing Java and JNI integration.
+%\item Showcasing CPack (automatic distributable package generation, including but not limited to RPM, DEB, and NSIS installation wizard).
+%\item Building of static or shared libraries, including support for .so versioning, DLL exports, and function deprecation.
+%\item Activating a long list of helpful warnings for GCC.
+%\item Helper functions to faciliate custom CMake find modules.
+%\end{itemize}
+
+%\subsection{Logging}
+%
+%In \lstinline{MyProject/logger/Logger.hpp} you will find simple logging facilities implemented:
+%
+%\begin{lstlisting}[language=c++]
+%#include <MyProject/logger/logger.hpp>
+%int main() {
+%    int x = 42;
+%    LOG( INFO, "The value of x is " << x );
+%}
+%\end{lstlisting}
+%
+%This gives the following output:
+%
+%\begin{lstlisting}
+%I|  main.cpp|  4|2015-06-11 19:37:41 UTC|The value of x is 42
+%\end{lstlisting}
+%
+%You see here the logging category (\lstinline{I} for ``INFO''), the source file and line number where the \lstinline{LOG()} call was made from, a date / time stamp, and the log message -- separated by pipe characters for easy parsing. The log message can be concatenated within the \lstinline{LOG()} call using the common \lstinline{operator<<()} syntax.
+%
+%An additional feature is that the logging can be switched on and off at runtime, either globally, for specific classes, and / or specific functions, individually for each logging category. Since C++ does not support reflection, this requires some coding discipline. A function containing \lstinline{LOG()} calls should call the \lstinline{CONTEXT()} macro as its first statement:
+%
+%\begin{lstlisting}[language=c++]
+%void MyClass::myFunc() {
+%    CONTEXT( "MyClass", "myFunc" );
+%    // ...
+%}
+%\end{lstlisting}
+%
+%The functions \lstinline{setEnabled()} and \lstinline{setException()} work on this context. It also enables -- via the \lstinline{EXCEPTION()} macro -- dumping the call stack to the log together with throwing an exception. Check the header \lstinline{MyProject/logger/Logger.hpp} for more details.
+%
+%This is by no means a full-fledged logging framework like log4j, but it is there, it works, and it should be easily expandable or replacable with something better. Besides, I needed some actual C++ source to demonstrate all the other JAWS features with.
+
+
+
+% ========================================================================
+
+%JAWS is a suggestion, a configuration base that you might fork as starting point for a software project of yours, then adapt to your own needs. While primarily aimed at C++, it also supports C or Java sources, and should be easily adaptable to many other programming languages.
+%
+%It is based on the CMake build system, and includes preconfigured setups for many popular and useful tools and libraries, like Boost, Valgrind, ICU, Doxygen, Javadoc, AStyle, and LaTeX, as well as a couple of little tools and snippets added by the author of JAWS.
+%
+%All code is provided under Creative Commons CC0 (Public Domain Dedication) unless otherwise stated in the source. See COPYING.txt for details.
+%
+%As you are fully expected to modify JAWS to your specific requirements, JAWS itself is not ``versioned''. Instead, you are urged to use the latest source snapshot, which is available via WebSVN or anonymous SVN, and possibly merge new additions into your setup as required.
+%
+%Features
+%
+%    Extensible CMake build setup
+%        Segregated into a CMakeLists.txt containing only simple set( configurations, and a JAWS.cmake module hiding the ``CMake magic'' from casual view.
+%        Support for C++ and Java sources.
+%        Tested on Windows / Microsoft Visual Studio, Linux / GCC, and AIX / IBM Visual Age.
+%        Includes module FindICU.cmake for locating and using the International Components for Unicode.
+%        Includes module UseLATEX.cmake by Kenneth Moreland as well as a simple example document to ease your way into LaTeX.
+%        Includes setup for configuring Boost C++ support libraries.
+%            Example code showcasing command line option parsing.
+%            Example code showcasing unit test drivers, including test build target. 
+%        Includes example CTest setup.
+%            Allowing to configure & compile the project on any supported platform using an identical one-liner (e.g. ctest -S CTestScript.cmake,Debug).
+%            Allowing continuous and nightly builds (from Subversion repositories, but see roadmap below), including running the test drivers (e.g. ctest -S CTestScript.cmake,Continuous which will only run if the repository has received source updates).
+%            Supporting submission of results to a CDash dashboard server. 
+%        Includes basic CPack setup for automatic generation of distributable packages.
+%            Support for NSIS creating GUI setup wizards on Windows.
+%            Generates DEB packages on Unixes by default, can be configured to do RPM, tarballs etc. 
+%        Includes doxygen and javadoc build targets to generate source documentation. 
+%    check tool to assert portable character set usage in filenames and sources, and maximum filename length.
+%        If AStyle is installed, supports checking source files for formatting style as part of unit testing. 
+%    logger unit providing basic, extensible logging facilities for C++, including the ability to switch logging on or off for given units or classes at runtime. 
+%
+%Changes
+%
+%    2014-06-14: Added minimal ``Hello World'' wxWidgets gui_example that gets compiled when you configure GUI=ON.
+%    2014-06-20: Hid several LaTeX related, internal variables from view in the CMake GUI. Made building of unit test binaries depend on BUILD_TESTING. Fixed a problem with the linking options if building a shared library.
+%    2015-03-06: Minor touches to check output. Added JAWS_latex_documents_NOINSTALL target support for documents that are not to be installed. Fixed handling of missing LaTeX environment. Removed support for pre-1.47.1 Boost. Added some first lines for GenerateExportHeader -- Windows DLL support coming later. Added support for listing header files in MSVC.
+%    2015-03-25: Added preliminary code for showcasing JNI interfacing between Java and C++.
+%    2015-04-26: Various cleanups, extending the framework to support multiple libraries generated by the project. (Not well-tested yet though.)
+%    2015-06-05: Fully implemented support for building DLLs on Windows, with declspec macros and everything.
+%    2015-06-08: Added mappings that allow LaTeX docs be written in (a subset of) UTF-8. 
+%
+%Roadmap
+%
+%These are features that will be added to JAWS in the future:
+%
+%    CTest support for git.
+%    Example code showcasing ICU UnicodeString and internationalization.
+%    Test Valgrind memory checking on Windows.
+%    Yet more and better testing, documentation and tutorials. 
+%
+%Feedback, patches, bug reports etc. please to solar@….
+%
+%===========================================================================
+%
+%                                    CONTENTS
+%
+%*  What was the motivation for JAWS?
+%*  What JAWS does for you, exactly
+%*  Getting Started
+%*  CTest
+%*  CDash
+%
+%===========================================================================
+%
+%                       WHAT WAS THE MOTIVATION FOR JAWS?
+%
+%When you are working with C/C++, compiling your source into binaries is
+%only a small (albeit important) part of what you need your computer to do.
+%There are many tools offering help here, the trick is to know them, and
+%how to use them.
+%
+%You need to create documentation on the internals of your source. Doxygen
+%is the tool of choice for this, but you might not be familiar with it, how
+%to set it up, how to use it, how to integrate it into your build system.
+%
+%You need to create documentation for the client. LaTeX has many advantages
+%over standard word processors, but again lack of familiarity might keep
+%you from enjoying its benefits.
+%
+%Being able to run unit tests and checking your sources for style guide
+%compliance automatically might be a nice thing, but if this involves
+%additional work to set up many might not bother, despite knowing of the
+%benefits such a setup would bring. And while most developers can agree to\
+%work on an existing code base in an existing code style without problems,
+%when faced with a clean slate things can deteriorate into heated arguments
+%about the One True Brace Style really quickly.
+%
+%Having a facility to print logging and informational messages from your
+%application, nicely formatted and with a timestamp, is a nice thing. But
+%again many developers will "make do" because they want to start working
+%on the "real" issue of their project.
+%
+%Having the means to run a fresh build automatically whenever you commit
+%new changes to the repository, or each morning before the developers come
+%in for the day, with the results being displayed by an easily accessible
+%website? Yes, but only if it does not cost too much to set up.
+%
+%And when all is compiled and done, packaging for release can be tricky,
+%and you will want to have this done automatically so you do not miss a
+%step.
+%
+%CMake is a very powerful build system that can be configured to do all the
+%above things for you. However, the sheer amount of features and somewhat
+%haphazard documentation of CMake can pose quite a challenge to newcomers.
+%
+%So here is "just a working setup", intended to provide a ready-to-use
+%starting point with all those things mentioned above included. Unpack,
+%reconfigure to suit your project, and you are ready to do the first full
+%build. Including Doxygen run, LaTeX-generated PDF docs, code reformatting
+%with useful defaults, unit tests, and a logger unit already set up for you.
+%
+%===========================================================================
+%
+%                        WHAT JAWS DOES FOR YOU, EXACTLY
+%
+%JAWS is a "base project". It represents the raw infrastructure; by forking
+%it, you start with a complete framework instead of starting from scratch.
+%
+%It all revolves around a CMake setup (http://www.cmake.org). The offerings
+%of JAWS in detail:
+%
+%- Configuration segregated to the point where ./CMakeLists.txt mostly
+%  consists of simple set() commands: Which units there are, which source
+%  files and test drivers to compile for each unit, which files to send to
+%  the LaTeX compiler et cetera. This is what you need to touch every now
+%  and then, so it is nice to not have it buried in lots of "CMake magic"
+%  (which is hidden away in ./cmake/JAWS.cmake).
+%
+%- CMake provides a preprocessing step, allowing to replace CMake symbols
+%  in certain source files with the values of CMake variables. This allows
+%  to keep certain configurations (like version numbers) in the central
+%  configuration file, making for easier maintenance. JAWS simplifies the
+%  process.
+%
+%- The file lists set up in ./CMakeLists.txt do not require you to state
+%  file paths. JAWS handles this automatically. This means you cannot add
+%  a source file from subdirectory X to unit Y, but that can be considered
+%  more of a feature than a limitation.
+%
+%- LaTeX is a powerful tool (not only) for generating project documentation.
+%  Compiled from plain text, it allows to use your favourite editor, text
+%  processing tools (e.g. grep, diff) and version control software, instead
+%  of referring to word processors. JAWS includes the module UseLATEX.cmake
+%  by Kenneth Moreland, allowing to process LaTeX documents under CMake
+%  control. Also included is a preconfigured LaTeX document to get newcomers
+%  started. Simply add any LaTeX documents to the ./docs/ directory and list
+%  them in ./CMakeLists.txt as JAWS_latex_documents -- CMake will add the
+%  build target "pdf" and takes care of the rest.
+%
+%- International Components for Unicode (ICU, http://www.icu-project.org)
+%  provide comprehensive support for character encodings, Unicode, and
+%  localisation. If your application handles text, chances are you will want
+%  to use ICU. But while CMake comes with FindXXX.cmake modules for many
+%  common libraries, ICU is not among them. While there are various examples
+%  of FindICU.cmake to be found on the internet, it is nice to have one
+%  right here. (If not installed in a system directory, you need to specify
+%  the path to the ICU installation as -DCMAKE_PREFIX_PATH when configuring
+%  the build.)
+%
+%- The Boost library collection (http://www.boost.org) is a staple of C++
+%  software development. The code frame of JAWS uses Boost itself. If you
+%  have additional requirements you can easily extend the list of Boost
+%  COMPONENTS in ./cmake/JAWS.cmake.
+%
+%- Doxygen (http://www.doxygen.org) generates documentation directly from
+%  C/C++ source code and its comments (similar to Javadoc does for Java).
+%  JAWS provides a preconfigured Doxygen.cfg file (taking e.g. project name,
+%  paths, and version numbers from ./CMakeLists.txt), and adds a build
+%  target "doxygen" to run Doxygen under CMake control.
+%
+%- Building the LaTeX and Doxygen documentation is combined under the "docs"
+%  build target.
+%
+%- "check" test tool scans source file names and contents for problematic /
+%  non-portable characters. If AStyle (http://astyle.sourceforge.net) is
+%  installed, also runs code reformatting on sources. To avoid changes made
+%  by AStyle getting checked in without manual review, changed files are
+%  saved as "<file>.reformatted" and the "check" test fails.
+%
+%- Several CMake features demonstrated by example, e.g. RPATH handling,
+%  configuration options (WARNINGS), grouping unit sources in IDE project
+%  files.
+%
+%- While CMake already supports multiple build targets, like Release or
+%  Debug builds, JAWS adds the targets DebugTrace and Trace, for tracing
+%  compilations with or without debug informations, respectively.
+%
+%- Compiler-specific settings for GCC, Microsoft Visual C++ and IBM Visual
+%  Age / AIX toolchains already provided, easily extendable.
+%
+%- CTest configuration file allows for script-driven Nightly, Continuous,
+%  and Experimental builds, including checks for memory leaks and test
+%  coverage. It also allows to get a Release, Debug, Trace, or DebugTrace
+%  build done without having to bother with a manually-written CMake line.
+%  (For details, see "CTEST" below.)
+%
+%- CDash configuration file allows for sending the CTest results to a CDash
+%  webserver for easy reference. (For details, see "CDASH" below.)
+%
+%- Regardless of which platform you are working on, once you are done with
+%  building and testing, all you need to do is call "cpack" and see your
+%  build be packaged for release, including an NSIS GUI installer for
+%  Windows.
+%
+%- An include file is generated at MyProject/MyProject_export.h faciliating
+%  the DLL Export declarations required on Windows.
+%
+%===========================================================================
+%
+%                                GETTING STARTED
+%
+%- If you got the JAWS framework directly from Subversion, make sure you
+%  used "svn export", not "svn checkout". You will be wanting to create a
+%  project repository of your own, and JAWS' .svn metadata would just get
+%  in the way.
+%
+%- Find a good name for your project. It should be all lowercase, short, and
+%  not contain any spaces. It will be used as directory and file name, C++
+%  namespace, and package name, so choose with care.
+%
+%- Rename the directory "MyProject" and the file "MyProject/MyProject.h"
+%  to that name. [1]
+%
+%- Replace any occurrence of the string "MyProject" in all existing files
+%  with that project name. [1]
+%
+%- Replace any occurrence of the string "MYPROJECT" in all existing files
+%  with the all-uppercase version of that project name. [1]
+%
+%- If you are using Subversion, clean out the "Header" tags in all existing
+%  files.
+%
+%  If you are using e.g. git or some other version control software that
+%  does not use or support keyword expansion, or do not want keyword
+%  expansion for some other reason, delete the "Header" lines altogether.
+%
+%- If you are using Subversion and want to use keyword expansion, enable it
+%  for the appropriate files. [2]
+%
+%- Replace the contents of this README.txt with a short description of YOUR
+%  project. (If a mention of JAWS remains in there, I would be happy.)
+%
+%- Replace the contents of LICENSE.txt with a description of YOUR licensing
+%  conditions. You should keep the mention of UseLATEX.cmake intact.
+%
+%- In the files ./docs/UserGuide.tex and ./docs/DeveloperGuide.tex, replace
+%  my name (Martin Baute) with yours. In the "CPack" configuration section
+%  in ./cmake/JAWS.cmake, replace my information (name, mail address, and
+%  package description) with the settings for YOUR project.
+%
+%- Make sure you have the following software installed, in addition to your
+%  compiler toolchain of choice:
+%
+%  CMake             http://www.cmake.org
+%  Doxygen           http://www.doxygen.org
+%  Graphviz          http://www.graphviz.org
+%  LaTeX             http://www.texlive.org, http://www.miktex.org
+%  ImageMagick       http://www.imagemagick.org
+%  AStyle            http://astyle.sourceforge.net
+%  ICU libraries     http://www.icu-project.org
+%  Boost libraries   http://www.boost.org
+%  NSIS              http://nsis.sourceforge.net (for Windows)
+%
+%  CMake is absolutely required to make JAWS work.
+%
+%  Doxygen and Graphviz are used for the "doxygen" build target, LaTeX for
+%  the "pdf" build target. Not having the software installed will not break
+%  the build, but the respective documentation will obviously not be build.
+%
+%  ImageMagick is not strictly required, but makes inclusion of graphics in
+%  LaTeX documents much easier (LaTeX is a bit touchy about image formats).
+%
+%  AStyle is used by the "check" test tool to enforce coding style. Again,
+%  not having it installed will not break things, but you will have to do
+%  without its benefits.
+%
+%  The Nullsoft Scriptable Install System (NSIS) will provide your Windows
+%  package as executable, GUI-driven setup (as users have come to expect).
+%
+%- Read through CMakeLists.txt and cmake/JAWS.cmake to get an idea of what
+%  is going on, and where to put in any modifications required for YOUR
+%  project.
+%
+%- Read the CTEST section below, and do the modifications to the CTest
+%  script mentioned there. When you are done, run a Debug build as described
+%  in that section.
+%
+%  Then change to the directory where your binaries have been built (that
+%  should be "../build/<Projectname>-Debug"), and run "options_example" /
+%  "options_example --help" to see Boost parameter parsing and the JAWS
+%  logger module at work.
+%
+%  You might also give "java -jar javaexample.jar" a try. Java support is
+%  rudimentary, though.
+%
+%- Run "make" (Unix) or "nmake" (Windows) to update your binaries if the
+%  sources changed. All binaries are built in the top directory; this might
+%  be changed to proper "./bin" and "./libs" handling in the future. Your
+%  documentation is built in the "./docs" subdirectory.
+%
+%- Try "make help" (or "nmake help") for a list of targets, and experiment
+%  a bit.
+%
+%- Enjoy.
+%
+%===========================================================================
+%
+%                                     CDASH
+%
+%CDash is a webserver that can display the results of CTest runs (Nightly,
+%Continuous, and Experimental builds). CTest packs the results into XML
+%files, and sends them to the configured address of a CDash instance. This
+%configuration is done in the file ./CTestConfig.cmake:
+%
+%- Adjust CTEST_PROJECT_NAME "MyProject" to your project name.
+%
+%- Adjust CTEST_NIGHTLY_START_TIME "01:00:00 UTC" to match the setting in
+%  ./CTestScript.cmake.
+%
+%- Adjust CTEST_DROP_SITE "127.0.0.1" to the domain / IP of the CDash
+%  instance.
+%
+%- Adjust CTEST_DROP_LOCATION "/cdash/submit.php?project=MyProject" to the
+%  URL for your project.
+%
+%===========================================================================
+%
+%[1]:
+%
+%    # Helper script for the replacing / cleaning / renaming. Replace
+%    # "projectname" and "PROJECTNAME" as appropriate, and delete one of the
+%    # two commented lines as desired.
+%
+%    for file in $(find . -type f)
+%    do
+%        sed -i -e "s/MyProject/projectname/g" \
+%               -e "s/MYPROJECT/PROJECTNAME/g" \
+%               $file
+%    done
+%    mv MyProject/MyProject.h MyProject/projectname.h
+%    mv MyProject projectname
+%
+%===========================================================================
+%
+%[2]:
+%
+%    # Helper script for enabling keyword expansion for appropriate files.
+%
+%    for file in $(find . -type f)
+%    do
+%        if head -n 1 $file | grep -q "\$Header"
+%        then
+%            svn propset svn:keywords "Header" $file
+%        fi
+%    done
+
+\end{document}

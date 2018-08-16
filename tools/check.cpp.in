@@ -1,0 +1,220 @@
+#include <boost/filesystem.hpp>
+#include <boost/version.hpp>
+
+#include <string>
+#include <sstream>
+#include <fstream>
+#include <iostream>
+#include <iomanip>
+#include <cstdlib>
+
+
+static std::string const legal_in_filename( "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_./" );
+static std::string const legal_in_source( legal_in_filename + " !\"#%&'()*+,.:;<=>?[\\]^{|}~\n$@" );
+
+static std::string astyle_exe( "@ASTYLE@" );
+
+
+/**
+ * Check a given file.
+ * @param[in] file The path object identifying the file.
+ * @returns Zero if the file passes inspection, non-zero otherwise.
+ */
+int check( std::string const & file, std::string const & astyle_options );
+
+
+int main( int argc, char * argv[] )
+{
+    char const * const USAGE = "Usage: check <directory> [ <extension> [ <extension> ... ] ]\n";
+
+    // Checking / parsing parameters
+    if ( argc < 3 )
+    {
+        std::cerr << USAGE;
+        return 1;
+    }
+
+    std::string path( argv[1] );
+
+    if ( ! boost::filesystem::is_directory( path ) )
+    {
+        std::cerr << USAGE;
+        return 1;
+    }
+
+    std::vector< std::string > extensions;
+
+    for ( int i = 2; i < argc; ++i )
+    {
+        extensions.push_back( argv[i] );
+    }
+
+    // Reading config file - AStyle options, and filenames to be exempted
+    std::vector< std::string > ignore;
+    std::string astyle_options;
+    std::ifstream config( "@CMAKE_SOURCE_DIR@/tools/check.cfg" );
+
+    if ( config )
+    {
+        getline( config, astyle_options );
+
+        while ( config )
+        {
+            std::string file;
+            getline( config, file );
+
+            file = "@CMAKE_SOURCE_DIR@/" + file;
+
+            if ( ( ! file.empty() ) &&
+                    ( file[0] != '#' ) &&
+                    boost::filesystem::exists( file ) &&
+                    boost::filesystem::is_regular_file( file ) )
+            {
+                ignore.push_back( file );
+            }
+        }
+
+        config.close();
+    }
+    else
+    {
+        astyle_exe = "ASTYLE-NOTFOUND";
+    }
+
+    int rc = 0;
+
+    // Loop through all files
+    for ( boost::filesystem::recursive_directory_iterator dir_it( path );
+            dir_it != boost::filesystem::recursive_directory_iterator(); ++dir_it )
+    {
+        std::string sourcefile( dir_it->path().string() );
+
+        // Loop through the list of extensions to be checked
+        for ( std::vector< std::string >::const_iterator ext_it = extensions.begin();
+                ext_it != extensions.end(); ++ext_it )
+        {
+            // If the extension matches and
+            // the file is not in the list of files to be ignored...
+            if ( std::equal( ext_it->rbegin(), ext_it->rend(), sourcefile.rbegin() ) &&
+                    std::find( ignore.begin(), ignore.end(), sourcefile ) == ignore.end() )
+            {
+                // ...do the check.
+                if ( sourcefile.find( ".java" ) == std::string::npos )
+                {
+                    rc |= check( sourcefile, astyle_options );
+                }
+                else
+                {
+                    rc |= check( sourcefile, astyle_options + " --style=java" );
+                }
+
+                break;
+            }
+        }
+    }
+
+    return rc;
+}
+
+
+// Convenience macro for formatted error output.
+#define CHECK_ERROR( x ) \
+    do \
+    { \
+        if ( rc == 0 ) \
+        { \
+            std::cerr << file << ":\n"; \
+        } \
+        std::cerr << "    " << dynamic_cast< std::ostringstream & >( \
+                  ( std::ostringstream() << std::dec << x ) ).str() << "\n"; \
+        ++rc; \
+    } while ( 0 )
+
+
+int check( std::string const & file, std::string const & astyle_options )
+{
+    int rc = 0;
+    boost::filesystem::path path( file );
+    // For checking the file name itself for validity on Windows machines, we
+    // want to strip the drive letter, so we can check the absence of colons.
+    // (Allowed after the drive letter, a bad idea inside the filename itself.)
+    // We also want to turn any backward slash separators into forward ones.
+    // With Boost > 1.43, we have generic_string() to do this for us. With
+    // older versions of Boost, we have to improvise the replacing.
+#if BOOST_VERSION > 104300
+    std::string generic_path = path.root_directory().generic_string() + path.relative_path().generic_string();
+#else
+    std::string generic_path = path.root_directory() + path.relative_path().string();
+#ifdef _WIN32
+    std::replace_if( generic_path.begin(), generic_path.end(), "\\", "/" );
+#endif
+#endif
+
+    // Checking for invalid characters in filename
+    if ( generic_path.find_first_not_of( legal_in_filename ) != std::string::npos )
+    {
+        CHECK_ERROR( "Invalid character 0x" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << static_cast< int >( static_cast< unsigned char >( generic_path[ generic_path.find_first_not_of( legal_in_filename ) ] ) ) << std::dec << " in filename." );
+    }
+
+    // Checking length of basename, i.e. file without path
+#if BOOST_VERSION > 104300
+    size_t filename_len = path.filename().string().length();
+#else
+    size_t filename_len = path.filename().length();
+#endif
+
+    if ( filename_len > @JAWS_MAX_FILENAME_LEN@ )
+    {
+        CHECK_ERROR( "Filename longer than " << @JAWS_MAX_FILENAME_LEN@ << " characters." );
+    }
+
+    // Checking for invalid characters in file
+    std::ifstream in( file.c_str(), std::ifstream::binary );
+
+    if ( ! in )
+    {
+        CHECK_ERROR( "Could not open for reading." );
+        return rc;
+    }
+
+    char c;
+    in >> c;
+
+    while ( in )
+    {
+        if ( legal_in_source.find( c ) == std::string::npos )
+        {
+            CHECK_ERROR( "Containing invalid character 0x" << std::hex << std::setw( 2 ) << std::setfill( '0' ) << static_cast< int >( static_cast< unsigned char >( c ) ) << std::dec << " at byte " << in.tellg() << "." );
+            break;
+        }
+
+        in >> c;
+    }
+
+    in.close();
+
+    // Checking the file for style
+
+    if ( astyle_exe == "ASTYLE-NOTFOUND" )
+    {
+        // CMake could not locate AStyle executable
+        return rc;
+    }
+
+    if ( std::system( ( astyle_exe + " " + astyle_options + " " + file ).c_str() ) != 0 )
+    {
+        CHECK_ERROR( "AStyle call failed or returned non-zero." );
+    }
+    else if ( boost::filesystem::exists( file + ".orig" ) )
+    {
+#if BOOST_VERSION > 104300
+        CHECK_ERROR( "Style check results in modification. Check '" << path.filename().string() << ".reformatted'." );
+#else
+        CHECK_ERROR( "Style check results in modification. Check '" << path.filename() << ".reformatted'." );
+#endif
+        std::rename( file.c_str(), ( file + ".reformatted" ).c_str() );
+        rename( ( file + ".orig" ).c_str(), file.c_str() );
+    }
+
+    return rc;
+}

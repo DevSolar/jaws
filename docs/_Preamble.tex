@@ -1,0 +1,222 @@
+% If you are new to LaTeX, you might want to visit:
+% https://en.wikibooks.org/wiki/LaTeX for a good, easy overview
+% https://tex.stackexchange.com for all your questions
+% http://ctan.org for extension packages covering literally ALL your needs
+
+% -------------------------------------------------------------------------
+% The "preamble" is the part where all the LaTeX housekeeping is done:
+% - inclusion of packages,
+% - settings,
+% - macros.
+%
+% Since this is pretty confusing to the casual LaTeX user and very
+% similar for all documents in a project, it can be useful to do all
+% this housekeeping in *one* central file, which is then included
+% by every individual document.
+%
+% See the existing documents on how to include.
+% -------------------------------------------------------------------------
+
+% Using A4 output format and the "article" document type.
+\documentclass[a4paper]{article}
+
+% Change this to e.g. 'ngerman' (for 'new german') as appropriate.
+% It sets the language used for table captions, table of contents etc.
+\usepackage[english]{babel}
+
+% The source encoding used in this file.
+\usepackage[utf8]{inputenc}
+
+% Leave this alone unless you really know what you are doing.
+\usepackage[T1]{fontenc}
+
+% Setting the fonts to be used -- Helvetica (Arial) for standard text,
+% and Inconsolata for fixed-width text
+\usepackage{helvet}
+\usepackage{inconsolata}
+\renewcommand{\familydefault}{\sfdefault}
+
+% This package adds 'nagging' warnings if you do questionable things in
+% your LaTeX source. What you are looking for is the line 'No complaints
+% by nag' when generating your documents.
+\RequirePackage[l2tabu, orthodox]{nag}
+
+% Package for handling underscores without needing to escape them (which
+% would be a pain in software documentation, traditionally rich with them).
+\usepackage{underscore}
+
+% Package for typesetting code snippets.
+% \begin{lstlisting}...\end{lstlisting} or \lstinline{...}
+% http://mirrors.ctan.org/macros/latex/contrib/listings/listings.pdf
+\usepackage{listings}
+
+% Package for color support (e.g. for highlighting).
+\usepackage{color}
+
+% Setting defaults. The lengthy 'literate' section translates multibyte
+% UTF-8 input characters into single-byte TeX sequences 'listings' can
+% handle. Provided is a complete mapping of any characters in Latin-1.
+% Use _+markup+_ to get red highlighting.
+\lstset{
+    basicstyle=\ttfamily\small,
+    frame=trBL,
+    breaklines=true,
+    columns=fixed,
+    moredelim=**[is][\color{red}]{_+}{+_},
+    literate={¡}{{!`}}1
+             {¢}{{\textcent}}1
+             {£}{{\pounds}}1
+             {¤}{{\textcurrency}}1
+             {¥}{{\textyen}}1
+             {¦}{{\textbrokenbar}}1
+             {§}{{\textsection}}1
+             {¨}{{\"{}}}1
+             {©}{{\textcopyright}}1
+             {ª}{{\textordfeminine}}1
+             {«}{{\guillemotleft}}1
+             {¬}{{\textlnot}}1
+             {®}{{\textregistered}}1
+             {¯}{{\={}}}1
+             {°}{{\textdegree}}1
+             {±}{{\textpm}}1
+             {²}{{\texttwosuperior}}1
+             {³}{{\textthreesuperior}}1
+             {´}{{\'{}}}1
+             {µ}{{\textmu}}1
+             {¶}{{\textparagraph}}1
+             {·}{{\textperiodcentered}}1
+             {¸}{{\c{}}}1
+             {¹}{{\textonesuperior}}1
+             {º}{{\textordmasculine}}1
+             {»}{{\guillemotright}}1
+             {¼}{{\textonequarter}}1
+             {½}{{\textonehalf}}1
+             {¾}{{\textthreequarters}}1
+             {¿}{{\textquestiondown}}1
+             {À}{{\`{A}}}1
+             {Á}{{\'{A}}}1
+             {Â}{{\^{A}}}1
+             {Ã}{{\~{A}}}1
+             {Ä}{{\"{A}}}1
+             {Å}{{\AA}}1
+             {Æ}{{\AE}}1
+             {Ç}{{\c{C}}}1
+             {È}{{\`{E}}}1
+             {É}{{\'{E}}}1
+             {Ê}{{\^{E}}}1
+             {Ë}{{\"{E}}}1
+             {Ì}{{\`{I}}}1
+             {Í}{{\'{I}}}1
+             {Î}{{\^{I}}}1
+             {Ï}{{\"{I}}}1
+             {Ð}{{\DH}}1
+             {Ñ}{{\~{N}}}1
+             {Ò}{{\`{O}}}1
+             {Ó}{{\'{O}}}1
+             {Ô}{{\^{O}}}1
+             {Õ}{{\~{O}}}1
+             {Ö}{{\"{O}}}1
+             {×}{{\texttimes}}1
+             {Ø}{{\O}}1
+             {Ù}{{\`{U}}}1
+             {Ú}{{\'{U}}}1
+             {Û}{{\^{U}}}1
+             {Ü}{{\"{U}}}1
+             {Ý}{{\'{Y}}}1
+             {Þ}{{\TH}}1
+             {ß}{{\ss}}1
+             {à}{{\`{a}}}1
+             {á}{{\'{a}}}1
+             {â}{{\^{a}}}1
+             {ã}{{\~{a}}}1
+             {ä}{{\"{a}}}1
+             {å}{{\aa}}1
+             {æ}{{\ae}}1
+             {ç}{{\c{c}}}1
+             {è}{{\`{e}}}1
+             {é}{{\'{e}}}1
+             {ê}{{\^{e}}}1
+             {ë}{{\"{e}}}1
+             {ì}{{\`{i}}}1
+             {í}{{\'{i}}}1
+             {î}{{\^{i}}}1
+             {ï}{{\"{i}}}1
+             {ð}{{\dh}}1
+             {ñ}{{\~{n}}}1
+             {ò}{{\`{o}}}1
+             {ó}{{\'{o}}}1
+             {ô}{{\^{o}}}1
+             {õ}{{\~{o}}}1
+             {ö}{{\"{o}}}1
+             {÷}{{\textdiv}}1
+             {ø}{{\o}}1
+             {ù}{{\`{u}}}1
+             {ú}{{\'{u}}}1
+             {û}{{\^{u}}}1
+             {ü}{{\"{u}}}1
+             {ý}{{\'{y}}}1
+             {þ}{{\th}}1
+             {ÿ}{{\"{y}}}1
+}
+
+% Example for defining a new language, as in
+% \begin{lstlisting}[language=foo]...\end{lstlisting}
+%\lstdefinelanguage{foo}
+%{morekeywords={foo,bar},                % defining 'foo' and 'bar' as...
+% sensitive=true,                        % ...case-sensitive keywords
+% morecomment=[l]{\#},                   % '#' style comments
+% moredelim=[s][keywordstyle]{[}{]},     % everything inside '[]' is set as keyword
+% moredelim=**[is][\color{red}]{_+}{+_}, % _+markup+_ for red highlighting
+% morestring=[b]"                        % everything inside '""' is set as string
+%}
+
+% You can use this macro to include pictures in your documents. Also a demo
+% of how to define a LaTeX macro.
+\usepackage{graphicx}
+% \pic is the name of the macro, which has 2 parameters, the first of which
+% has a default of 'width=\textwidth' (telling the \includegraphics macro
+% to set the picture at full width). You can use 'width=0.5\textwidth', or
+% 'width=4cm', or completely different \includegraphics options. The rest
+% is the definition of the macro, with #1 and #2 replaced by the parameters.
+% Usage:
+%     \pic{filename}
+%     \pic[option]{filename}
+\newcommand{\pic}[2][width=\textwidth]{\noindent\begin{center}\includegraphics[#1]{docs/images/#2}\end{center}}
+
+% This package not only supports having clickable URIs in your documents,
+% it also handles the 'Contents' overview you get in your PDF reader.
+% http://mirrors.ctan.org/macros/latex/contrib/hyperref/doc/manual.pdf
+\usepackage[%
+unicode=true,%
+hypertexnames=false,%
+hidelinks,%
+bookmarksnumbered,%
+bookmarksopen,%
+bookmarksopenlevel={0},%
+pdfdisplaydoctitle=true,%
+pdfpagemode=UseOutlines%
+]{hyperref}
+\hypersetup{pdftitle=\doctitle}
+
+% Annotate sections you would like to refer to with
+% \label{section name}
+% and reference them with
+% see \secref{section name}
+% to get the text
+% see section <number> ``section name''
+\newcommand{\secref}[1]{section \ref{#1} \emph{``#1''}}
+
+\title{\doctitle}
+\author{\docauthors}
+
+\makeatletter
+\renewcommand*\@pnumwidth{2em}
+\makeatother
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\clearpage

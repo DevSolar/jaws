@@ -1,0 +1,20 @@
+#define BOOST_TEST_MAIN
+#ifndef WIN32
+#define BOOST_TEST_DYN_LINK
+#endif
+
+#define BOOST_TEST_MODULE Core
+
+#include <boost/test/unit_test.hpp>
+
+#include "MyProject/core/Constants.h"
+
+BOOST_AUTO_TEST_SUITE( ConstantsTu )
+
+BOOST_AUTO_TEST_CASE( Version )
+{
+    BOOST_CHECK_EQUAL( MYPROJECT_VERSION_MAJOR, @JAWS_VERSION_MAJOR@ );
+    BOOST_CHECK_EQUAL( MYPROJECT_VERSION_MINOR, @JAWS_VERSION_MINOR@ );
+}
+
+BOOST_AUTO_TEST_SUITE_END()

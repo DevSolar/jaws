@@ -1,0 +1,7 @@
+===========================================================================
+
+(latest on top)
+
+= Version 0.1 (YYYY-MM-DD)
+
+    Initial Setup, using the JAWS framework (http://jaws.rootdirectory.de).

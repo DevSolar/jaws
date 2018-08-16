@@ -1,0 +1,16 @@
+===========================================================================
+
+Unless otherwise noted, files in this package are original work by Martin
+Baute (solar@rootdirectory.de), created with the help of examples and
+tutorials found on the web.
+
+These files are released under the Creative Commons CC0 license (Public
+Domain Dedication):
+
+           https://creativecommons.org/publicdomain/zero/1.0/
+
+Files with individual licenses are:
+
+* cmake/UseLATEX.cmake
+
+Check those files for details.

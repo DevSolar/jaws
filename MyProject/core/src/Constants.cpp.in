@@ -1,0 +1,4 @@
+#include "MyProject/core/Constants.h"
+
+unsigned const MYPROJECT_VERSION_MAJOR = @JAWS_VERSION_MAJOR@;
+unsigned const MYPROJECT_VERSION_MINOR = @JAWS_VERSION_MINOR@;
