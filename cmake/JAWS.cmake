@@ -176,20 +176,13 @@ if ( JAWS_latex_documents OR JAWS_latex_documents_NOINSTALL )
             add_latex_document( docs/${file}.tex
                                 IMAGE_DIRS docs/images
                                 INPUTS docs/_Preamble.tex
-                                DEFAULT_PDF
-                                MANGLE_TARGET_NAMES
+                                FORCE_PDF
                               )
-            list( APPEND JAWS_LATEX_SOURCES    docs/${file}.tex )
-            list( APPEND JAWS_PDF_TARGETS      ${file}_pdf )
-            list( APPEND JAWS_AUXCLEAN_TARGETS ${file}_auxclean )
         endforeach()
         # SOURCES here does NOT automatically include subdocuments added by
         # \include or \input in the LaTeX sources. These need to be added to
         # INPUTS above.
-        add_custom_target( pdf SOURCES ${JAWS_LATEX_SOURCES} )
-        add_dependencies( pdf ${JAWS_PDF_TARGETS} )
         add_dependencies( docs pdf )
-        add_custom_target( auxclean DEPENDS ${JAWS_AUXCLEAN_TARGETS} )
     else()
         message( "++ No LaTeX installation found. Will not be able to build manuals." )
         message( "++ LaTeX installations are available e.g. from http://www.texlive.org." )
