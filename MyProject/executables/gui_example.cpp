@@ -1,10 +1,10 @@
 // For compilers supporting precompiled headers
-#include <wx/wxprec.h>
+#include "wx/wxprec.h"
 
 #ifndef WX_PRECOMP
 // If precompiled headers are not supported, this pulls in the most
 // commonly used headers in one go.
-#include <wx/wx.h>
+#include "wx/wx.h"
 #endif
 
 // Deriving from wxApp and overriding OnInit() is how you / set up a

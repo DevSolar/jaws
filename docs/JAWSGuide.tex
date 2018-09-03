@@ -254,40 +254,6 @@ If your build process generates compiler warnings -- which it should not, but so
 %\item Helper functions to faciliate custom CMake find modules.
 %\end{itemize}
 
-%\subsection{Logging}
-%
-%In \lstinline{MyProject/logger/Logger.hpp} you will find simple logging facilities implemented:
-%
-%\begin{lstlisting}[language=c++]
-%#include <MyProject/logger/logger.hpp>
-%int main() {
-%    int x = 42;
-%    LOG( INFO, "The value of x is " << x );
-%}
-%\end{lstlisting}
-%
-%This gives the following output:
-%
-%\begin{lstlisting}
-%I|  main.cpp|  4|2015-06-11 19:37:41 UTC|The value of x is 42
-%\end{lstlisting}
-%
-%You see here the logging category (\lstinline{I} for ``INFO''), the source file and line number where the \lstinline{LOG()} call was made from, a date / time stamp, and the log message -- separated by pipe characters for easy parsing. The log message can be concatenated within the \lstinline{LOG()} call using the common \lstinline{operator<<()} syntax.
-%
-%An additional feature is that the logging can be switched on and off at runtime, either globally, for specific classes, and / or specific functions, individually for each logging category. Since C++ does not support reflection, this requires some coding discipline. A function containing \lstinline{LOG()} calls should call the \lstinline{CONTEXT()} macro as its first statement:
-%
-%\begin{lstlisting}[language=c++]
-%void MyClass::myFunc() {
-%    CONTEXT( "MyClass", "myFunc" );
-%    // ...
-%}
-%\end{lstlisting}
-%
-%The functions \lstinline{setEnabled()} and \lstinline{setException()} work on this context. It also enables -- via the \lstinline{EXCEPTION()} macro -- dumping the call stack to the log together with throwing an exception. Check the header \lstinline{MyProject/logger/Logger.hpp} for more details.
-%
-%This is by no means a full-fledged logging framework like log4j, but it is there, it works, and it should be easily expandable or replacable with something better. Besides, I needed some actual C++ source to demonstrate all the other JAWS features with.
-
-
 
 % ========================================================================
 
@@ -320,7 +286,6 @@ If your build process generates compiler warnings -- which it should not, but so
 %        Includes doxygen and javadoc build targets to generate source documentation. 
 %    check tool to assert portable character set usage in filenames and sources, and maximum filename length.
 %        If AStyle is installed, supports checking source files for formatting style as part of unit testing. 
-%    logger unit providing basic, extensible logging facilities for C++, including the ability to switch logging on or off for given units or classes at runtime. 
 %
 %Changes
 %
@@ -400,7 +365,7 @@ If your build process generates compiler warnings -- which it should not, but so
 %starting point with all those things mentioned above included. Unpack,
 %reconfigure to suit your project, and you are ready to do the first full
 %build. Including Doxygen run, LaTeX-generated PDF docs, code reformatting
-%with useful defaults, unit tests, and a logger unit already set up for you.
+%with useful defaults, and unit tests already set up for you.
 %
 %===========================================================================
 %
@@ -580,8 +545,7 @@ If your build process generates compiler warnings -- which it should not, but so
 %
 %  Then change to the directory where your binaries have been built (that
 %  should be "../build/<Projectname>-Debug"), and run "options_example" /
-%  "options_example --help" to see Boost parameter parsing and the JAWS
-%  logger module at work.
+%  "options_example --help" to see Boost parameter parsing at work.
 %
 %  You might also give "java -jar javaexample.jar" a try. Java support is
 %  rudimentary, though.
