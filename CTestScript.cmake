@@ -1,6 +1,6 @@
 # This makes sure that you are not running on an outdated, untested
 # version of CMake.
-cmake_minimum_required( VERSION 3.7.0 FATAL_ERROR )
+cmake_minimum_required( VERSION 3.8.0 FATAL_ERROR )
 
 if ( "${CTEST_SCRIPT_ARG}" STREQUAL "" )
     message( FATAL_ERROR "Usage: ctest -S ${CTEST_SCRIPT_NAME},[Experimental|Continuous|Nightly|(BuildType)]" )
@@ -145,7 +145,7 @@ elseif ( EXISTS .git )
         message( FATAL_ERROR "** No GIT executable found in PATH." )
     endif()
 else()
-    message( "Source directory found to be neither SVN nor GIT working directory." )
+    message( "++ Source directory found to be neither SVN nor GIT working directory." )
 endif()
 
 # Piecing together the configuration command line. Preferring this over
@@ -163,7 +163,7 @@ set( CTEST_CONFIGURE_COMMAND "\"${CMAKE_COMMAND}\" \
      -G \"${CTEST_CMAKE_GENERATOR}\" \
      ${CTEST_SOURCE_DIRECTORY}" )
 
-#message( "${CTEST_CONFIGURE_COMMAND}" )
+#message( STATUS "${CTEST_CONFIGURE_COMMAND}" )
 
 # In case you need special proxy settings, these can be configured here.
 # Better, of course, to have the correct values set globally.
