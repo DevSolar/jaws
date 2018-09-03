@@ -168,6 +168,10 @@ set( JAWS_JARS
      jniexample
    )
 
+set( JAWS_JARS_NOINSTALL
+     # ...
+   )
+
 # File Lists
 ############
 

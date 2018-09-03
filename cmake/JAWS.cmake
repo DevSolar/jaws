@@ -130,7 +130,6 @@ if ( ASTYLE )
     endif()
 endif()
 
-
 # Looping through the files that need variable replacement.
 foreach ( file ${JAWS_configure_files} )
     configure_file( "${file}.in" "${file}" @ONLY )
@@ -203,7 +202,7 @@ endif()
 # Java
 ###########################################################################
 
-if ( JAWS_JARS )
+if ( JAWS_JARS OR JAWS_JARS_NOINSTALL )
     set( JAWS_JAVA_COMPONENTS "Development" )
     if ( BUILD_TESTING )
         list( APPEND JAWS_JAVA_COMPONENTS "Runtime" )
@@ -211,7 +210,7 @@ if ( JAWS_JARS )
     find_package( Java ${JAWS_JAVA_VERSION} COMPONENTS ${JAWS_JAVA_COMPONENTS} )
     if ( Java_Development_FOUND )
         include( UseJava )
-        foreach( jar ${JAWS_JARS} )
+        foreach( jar ${JAWS_JARS} ${JAWS_JARS_NOINSTALL} )
             # First source in each Java unit is set as entry point
             list( GET JAWS_${jar}_SOURCES 0 JAWS_JAR_ENTRY_POINT )
             remove_extension( JAWS_JAR_ENTRY_POINT )
@@ -226,7 +225,10 @@ if ( JAWS_JARS )
                      VERSION "${JAWS_VERSION_MAJOR}.${JAWS_VERSION_MINOR}"
                    )
             list( APPEND JAWS_JAVA_PACKAGES ${CMAKE_PROJECT_NAME}.${jar} )
-            install_jar( ${jar} bin )
+            list( FIND JAWS_JARS ${jar} JAR_TO_BE_INSTALLED )
+            if ( JAR_TO_BE_INSTALLED GREATER -1 )
+                install_jar( ${jar} bin )
+            endif()
         endforeach()
         # The UseJava module actually provides a function create_javadoc(),
         # but it cannot be set to quiet mode, and it does not give a nice
