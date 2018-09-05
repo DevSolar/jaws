@@ -530,11 +530,20 @@ set_tests_properties( check PROPERTIES ENVIRONMENT "LANG=C" )
 # Installation
 ###########################################################################
 
+# Compiled libraries
 install( TARGETS ${JAWS_LIBS}
          RUNTIME DESTINATION bin
          ARCHIVE DESTINATION lib${JAWS_LIBEXT}
          LIBRARY DESTINATION lib${JAWS_LIBEXT}
        )
+
+# Compiled executables
+install( TARGETS ${JAWS_EXES} RUNTIME DESTINATION bin )
+
+# _NOINSTALL binaries are for debugging / developer use only
+if ( NOT ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" ) )
+    install( TARGETS ${JAWS_EXES_NOINSTALL} RUNTIME DESTINATION bin )
+endif()
 
 # If your project has data to be installed that would be out-of-place in
 # either the binary or the documentation directory.
@@ -542,17 +551,10 @@ install( TARGETS ${JAWS_LIBS}
 #         DESTINATION ${JAWS_DATA_DIR}
 #         PATTERN ".svn" EXCLUDE )
 
-# _NOINSTALL binaries are for debugging / developer use only
-if ( NOT ( ${CMAKE_BUILD_TYPE} STREQUAL "Release" ) )
-    install( TARGETS ${JAWS_EXES_NOINSTALL} RUNTIME DESTINATION bin )
-endif()
-
-install( TARGETS ${JAWS_EXES} RUNTIME DESTINATION bin )
-
+# Verbatim documentation files
 install( FILES CHANGES.txt README.txt DESTINATION ${JAWS_DOC_DIR} )
 
-install( FILES ${JAWS_INCLUDES} ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}/${CMAKE_PROJECT_NAME}_export.h DESTINATION include/${CMAKE_PROJECT_NAME} )
-
+# Compiled documentation
 if ( JAWS_NOLATEX )
     message( "++ Skipping installation of documentation (no LaTeX installation found)..." )
 else()
@@ -560,6 +562,9 @@ else()
         install( FILES ${CMAKE_BINARY_DIR}/docs/${file}.pdf DESTINATION ${JAWS_DOC_DIR} )
     endforeach()
 endif()
+
+# Header files
+install( FILES ${JAWS_INCLUDES} ${CMAKE_BINARY_DIR}/${CMAKE_PROJECT_NAME}/${CMAKE_PROJECT_NAME}_export.h DESTINATION include/${CMAKE_PROJECT_NAME} )
 
 ###########################################################################
 # Compiler-Specific Settings
