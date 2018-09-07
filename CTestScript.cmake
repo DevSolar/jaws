@@ -98,11 +98,12 @@ select_dir( ICU_ROOT     "${TARGET_DIR}/icu;${TARGET_DIR}/icu/include" )
 
 if ( WIN32 )
     set( CTEST_CMAKE_GENERATOR "NMake Makefiles" )
-    # Additions to CMAKE_PREFIX_PATH required for Windows
+    # Windows-specific CMake options
     set( PLATFORM_OPTIONS "" )
     # You might have to extend the PATH to find the DLLs
-    set( ENV{PATH} "$ENV{PATH};${ICU_ROOT}/bin;${BOOST_ROOT}/lib" )
+    #set( ENV{PATH} "$ENV{PATH};${ICU_ROOT}/bin;${BOOST_ROOT}/lib" )
 else()
+    # Unix-specific CMake options
     set( CTEST_CMAKE_GENERATOR "Unix Makefiles" )
     # No additions to CMAKE_PREFIX_PATH required for Unix
     set( PLATFORM_OPTIONS "" )
@@ -124,7 +125,7 @@ set( CTEST_BUILD_NAME "${CMAKE_SYSTEM_NAME}" )
 # If your tests trip a timeout, you can expand it. The value is in seconds.
 #set( CTEST_TEST_TIMEOUT 900 )
 
-# Assuming that "ctest", "cmake" and "svn" are in the command PATH.
+# Checking that "ctest", "cmake", and VCS-of-choice are in the command PATH.
 
 find_program( CTEST_COMMAND ctest )
 if ( ${CTEST_COMMAND} STREQUAL "CTEST_COMMAND-NOTFOUND" )

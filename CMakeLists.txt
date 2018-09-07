@@ -19,8 +19,8 @@ cmake_minimum_required( VERSION 3.8.0 FATAL_ERROR )
 # Project Info
 ##############
 
-# These obviously need changing according to YOUR project. These variables
-# are mainly used for CPack, i.e. for packaging metadata.
+# These obviously need changing according to YOUR project.
+# These variables are mainly used for CPack, i.e. for packaging metadata.
 # The LONGNAME is also used for the config file example below.
 project( MyProject )          # One-word project/package name
 set( JAWS_PROJECT_LONGNAME    "Just A Working Setup" )
@@ -113,7 +113,7 @@ set( JAWS_LIBS
 # list such dependencies here, as JAWS_<library>_DEPENDENCIES.
 
 set( JAWS_MyProject_DEPENDENCIES
-     # ...
+     # ...none.
    )
 
 # The units for each library, each unit located at MyProject/<unit>,
@@ -131,7 +131,7 @@ set( JAWS_EXES
    )
 
 set( JAWS_EXES_NOINSTALL
-     # ...
+     # ...none.
    )
 
 # Conditional compilation -- appending to the lists above depending on which
@@ -143,7 +143,7 @@ if ( GUI )
         )
 
     list( APPEND JAWS_EXES_NOINSTALL
-          # ...
+          # ...none.
         )
 endif()
 
@@ -155,7 +155,7 @@ set( JAWS_options_example_DEPENDENCIES
    )
 
 set( JAWS_gui_example_DEPENDENCIES
-     # ...
+     # ...none.
    )
 
 # A list of the Java units in the project, each being a MyProject/<junit>
@@ -169,7 +169,7 @@ set( JAWS_JARS
    )
 
 set( JAWS_JARS_NOINSTALL
-     # ...
+     # ...none.
    )
 
 # File Lists
@@ -224,7 +224,7 @@ set( JAWS_latex_documents_NOINSTALL
 # your library / libraries).
 
 set( JAWS_INCLUDES
-     # ...
+     #...none.
    )
 
 # Source File Lists
