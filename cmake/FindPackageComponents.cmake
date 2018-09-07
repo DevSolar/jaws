@@ -61,7 +61,7 @@
 #
 # - find_libcomponent( docstring component [alt_name [alt_name ...] ] )
 #   For finding library components if specified by find_package(). If
-#   <package>_ROOT is set, <package>_ROOT/lib is used as path hint. The
+#   <package>_ROOT is set, <package>_ROOT/lib{64} is used as path hint. The
 #   result is stored in the standard variable <package>_<component>_LIBRARY,
 #   which is given the specified docstring and marked as advanced.
 #   Alternative names for the component can be given as additional parameters.
@@ -132,7 +132,7 @@ function( find_libcomponent docstring component )
 
         if ( ${CMAKE_FIND_PACKAGE_NAME}_ROOT )
             # <package>_ROOT needs to be suffixed by /lib to be useful
-            set( LIBHINTS HINTS ${${CMAKE_FIND_PACKAGE_NAME}_ROOT}/lib )
+            set( LIBHINTS HINTS ${${CMAKE_FIND_PACKAGE_NAME}_ROOT}/lib${JAWS_LIBEXT} )
         endif()
 
         # We need <package>_INCLUDE_DIR to be set so we can add it to the
