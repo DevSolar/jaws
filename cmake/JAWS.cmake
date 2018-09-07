@@ -8,6 +8,12 @@
 # General Settings
 ###########################################################################
 
+# Setting the language standard; supported values as of CMake 3.8.0 are
+# 98, 11, 14, and 17 (of course depending on support by your compiler).
+set( CMAKE_CXX_STANDARD 11 )
+
+# Checking if we are running on a 64-bit machine; for Unix this makes a
+# difference in the installation path for libraries.
 if ( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     set( JAWS_LIBEXT "64" )
 else()
