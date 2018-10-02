@@ -5,7 +5,7 @@ macro( CheckAIXEnvironment )
          "$ENV{OBJECT_MODE}" STREQUAL "64" OR
          "$ENV{OBJECT_MODE}" STREQUAL "32_64"
        )
-        message( "-- OBJECT_MODE is set to $ENV{OBJECT_MODE}." )
+        message( STATUS "OBJECT_MODE is set to $ENV{OBJECT_MODE}." )
     else()
         message( SEND_ERROR "OBJECT_MODE is not set to either '32', '64', or '32_64'. "
                             "The default is to build 32bit libraries. "

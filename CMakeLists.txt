@@ -75,8 +75,8 @@ set( JAWS_VERSION_API ${JAWS_VERSION_MAJOR} )
 # - add the source file (WITHOUT the ".in") to JAWS_configure_files below.
 
 # Maximum allowed length of a file name.
-# Used by the the "check" test (for making sure no source filename is
-# actually longer than this).
+# Used by the "check" test (for making sure no source filename is actually
+# longer than this).
 
 set( JAWS_MAX_FILENAME_LEN "25" )
 
