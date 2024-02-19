@@ -48,8 +48,8 @@ enum
 wxBEGIN_EVENT_TABLE( MyFrame, wxFrame )
     EVT_MENU( ID_Quit, MyFrame::OnQuit )
     EVT_MENU( ID_About, MyFrame::OnAbout )
-    EVT_MENU( ID_Button1, MyFrame::OnButton1 )
-    EVT_MENU( ID_Button2, MyFrame::OnButton2 )
+    EVT_BUTTON( ID_Button1, MyFrame::OnButton1 )
+    EVT_BUTTON( ID_Button2, MyFrame::OnButton2 )
 wxEND_EVENT_TABLE()
 
 // Declaring the entry point for the application.
